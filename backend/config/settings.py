@@ -8,7 +8,11 @@ SECRET_KEY = 'django-insecure-esg-project'
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "breathe-esg-platform-wzk1.onrender.com"
+]
 
 
 INSTALLED_APPS = [
