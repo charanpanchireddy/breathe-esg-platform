@@ -1,0 +1,4 @@
+scope,category,activity,quantity,unit
+Scope 1,Fuel,Diesel,-50,liters
+Scope 2,Electricity,Grid Power,999999,kWh
+Scope 3,Travel,Flight,200,km
