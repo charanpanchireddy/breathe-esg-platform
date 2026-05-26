@@ -12,7 +12,8 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Legend
 } from 'recharts'
 
 function Dashboard() {
@@ -26,22 +27,47 @@ function Dashboard() {
   const [showSuspicious, setShowSuspicious] =
     useState(false)
 
+  const [loading, setLoading] = useState(false)
+
+  const BASE_URL =
+    'https://breathe-esg-platform-wzk1.onrender.com'
+
   const fetchRecords = async () => {
 
-    const token = localStorage.getItem('access')
+    try {
 
-    const response = await fetch(
-      'http://127.0.0.1:8000/api/records/',
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+      const token = localStorage.getItem('access')
+
+      const response = await fetch(
+        `${BASE_URL}/api/records/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
+      )
+
+      if (response.status === 401) {
+
+        alert('Session expired. Login again.')
+
+        localStorage.clear()
+
+        window.location.href = '/'
+
+        return
       }
-    )
 
-    const data = await response.json()
+      const data = await response.json()
 
-    setRecords(data)
+      setRecords(data)
+
+    } catch (error) {
+
+      console.log(error)
+
+      alert('Failed to fetch records')
+    }
   }
 
   useEffect(() => {
@@ -51,31 +77,58 @@ function Dashboard() {
   const handleUpload = async () => {
 
     if (!file) {
+
       alert('Choose a CSV file')
+
       return
     }
 
-    const token = localStorage.getItem('access')
+    try {
 
-    const formData = new FormData()
+      setLoading(true)
 
-    formData.append('file', file)
-    formData.append('source_type', 'SAP')
+      const token = localStorage.getItem('access')
 
-    await fetch(
-      'http://127.0.0.1:8000/api/upload/',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        body: formData
+      const formData = new FormData()
+
+      formData.append('file', file)
+
+      formData.append('source_type', 'SAP')
+
+      const response = await fetch(
+        `${BASE_URL}/api/upload/`,
+        {
+          method: 'POST',
+
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+
+          body: formData
+        }
+      )
+
+      if (response.ok) {
+
+        alert('Upload successful')
+
+        fetchRecords()
+
+      } else {
+
+        alert('Upload failed')
       }
-    )
 
-    alert('Upload successful')
+    } catch (error) {
 
-    fetchRecords()
+      console.log(error)
+
+      alert('Server error')
+
+    } finally {
+
+      setLoading(false)
+    }
   }
 
   const filteredRecords = records.filter((record) => {
@@ -116,7 +169,7 @@ function Dashboard() {
 
     <div
       style={{
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#f1f5f9',
         minHeight: '100vh'
       }}
     >
@@ -127,16 +180,17 @@ function Dashboard() {
         style={{
           maxWidth: '1400px',
           margin: 'auto',
-          padding: '20px'
+          padding: '30px'
         }}
       >
 
         <h1
           style={{
             textAlign: 'center',
-            marginBottom: '30px',
             fontSize: '60px',
-            color: '#0f172a'
+            marginBottom: '40px',
+            color: '#0f172a',
+            fontWeight: 'bold'
           }}
         >
           ESG Upload System
@@ -157,21 +211,30 @@ function Dashboard() {
             onChange={(e) =>
               setFile(e.target.files[0])
             }
+            style={{
+              padding: '10px'
+            }}
           />
 
           <button
             onClick={handleUpload}
+            disabled={loading}
             style={{
-              padding: '12px 24px',
+              padding: '14px 28px',
               backgroundColor: '#2563eb',
               color: 'white',
               border: 'none',
-              borderRadius: '10px',
+              borderRadius: '12px',
               cursor: 'pointer',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              fontSize: '16px'
             }}
           >
-            Upload CSV
+            {
+              loading
+                ? 'Uploading...'
+                : 'Upload CSV'
+            }
           </button>
 
         </div>
@@ -180,7 +243,7 @@ function Dashboard() {
           style={{
             display: 'grid',
             gridTemplateColumns:
-              'repeat(auto-fit, minmax(250px, 1fr))',
+              'repeat(auto-fit, minmax(280px, 1fr))',
             gap: '25px',
             marginBottom: '40px'
           }}
@@ -188,41 +251,71 @@ function Dashboard() {
 
           <div
             style={{
-              backgroundColor: '#d9f99d',
-              padding: '30px',
+              background:
+                'linear-gradient(to right,#bef264,#d9f99d)',
+              padding: '35px',
               borderRadius: '20px',
-              textAlign: 'center'
+              textAlign: 'center',
+              boxShadow:
+                '0px 5px 20px rgba(0,0,0,0.08)'
             }}
           >
             <h2>Total Records</h2>
 
-            <h1>{records.length}</h1>
+            <h1
+              style={{
+                fontSize: '70px',
+                margin: '10px'
+              }}
+            >
+              {records.length}
+            </h1>
           </div>
 
           <div
             style={{
-              backgroundColor: '#fecaca',
-              padding: '30px',
+              background:
+                'linear-gradient(to right,#fecaca,#fca5a5)',
+              padding: '35px',
               borderRadius: '20px',
-              textAlign: 'center'
+              textAlign: 'center',
+              boxShadow:
+                '0px 5px 20px rgba(0,0,0,0.08)'
             }}
           >
             <h2>Suspicious Records</h2>
 
-            <h1>{suspiciousCount}</h1>
+            <h1
+              style={{
+                fontSize: '70px',
+                margin: '10px'
+              }}
+            >
+              {suspiciousCount}
+            </h1>
           </div>
 
           <div
             style={{
-              backgroundColor: '#bfdbfe',
-              padding: '30px',
+              background:
+                'linear-gradient(to right,#bfdbfe,#93c5fd)',
+              padding: '35px',
               borderRadius: '20px',
-              textAlign: 'center'
+              textAlign: 'center',
+              boxShadow:
+                '0px 5px 20px rgba(0,0,0,0.08)'
             }}
           >
             <h2>Pending Records</h2>
 
-            <h1>{pendingCount}</h1>
+            <h1
+              style={{
+                fontSize: '70px',
+                margin: '10px'
+              }}
+            >
+              {pendingCount}
+            </h1>
           </div>
 
         </div>
@@ -246,17 +339,19 @@ function Dashboard() {
               setSearch(e.target.value)
             }
             style={{
-              padding: '12px',
-              width: '300px',
-              borderRadius: '10px',
-              border: '1px solid #ccc'
+              padding: '14px',
+              width: '320px',
+              borderRadius: '12px',
+              border: '1px solid #cbd5e1',
+              fontSize: '16px'
             }}
           />
 
           <label
             style={{
-              fontSize: '24px',
-              fontWeight: 'bold'
+              fontSize: '20px',
+              fontWeight: 'bold',
+              color: '#334155'
             }}
           >
 
@@ -266,6 +361,9 @@ function Dashboard() {
               onChange={() =>
                 setShowSuspicious(!showSuspicious)
               }
+              style={{
+                marginRight: '10px'
+              }}
             />
 
             Show Suspicious Only
@@ -278,7 +376,7 @@ function Dashboard() {
           style={{
             display: 'grid',
             gridTemplateColumns:
-              'repeat(auto-fit, minmax(400px, 1fr))',
+              'repeat(auto-fit, minmax(450px, 1fr))',
             gap: '30px',
             marginBottom: '50px'
           }}
@@ -287,14 +385,17 @@ function Dashboard() {
           <div
             style={{
               backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '20px'
+              padding: '25px',
+              borderRadius: '20px',
+              boxShadow:
+                '0px 5px 20px rgba(0,0,0,0.08)'
             }}
           >
 
             <h2
               style={{
-                textAlign: 'center'
+                textAlign: 'center',
+                marginBottom: '20px'
               }}
             >
               Emission Overview
@@ -317,7 +418,8 @@ function Dashboard() {
 
                 <Bar
                   dataKey="emissions"
-                  fill="#3b82f6"
+                  fill="#2563eb"
+                  radius={[10, 10, 0, 0]}
                 />
 
               </BarChart>
@@ -329,14 +431,17 @@ function Dashboard() {
           <div
             style={{
               backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '20px'
+              padding: '25px',
+              borderRadius: '20px',
+              boxShadow:
+                '0px 5px 20px rgba(0,0,0,0.08)'
             }}
           >
 
             <h2
               style={{
-                textAlign: 'center'
+                textAlign: 'center',
+                marginBottom: '20px'
               }}
             >
               Status Distribution
@@ -365,6 +470,8 @@ function Dashboard() {
 
                 <Tooltip />
 
+                <Legend />
+
               </PieChart>
 
             </ResponsiveContainer>
@@ -377,7 +484,8 @@ function Dashboard() {
           style={{
             textAlign: 'center',
             marginBottom: '30px',
-            color: '#0f172a'
+            color: '#0f172a',
+            fontSize: '45px'
           }}
         >
           Emission Records
@@ -395,13 +503,15 @@ function Dashboard() {
               borderCollapse: 'collapse',
               backgroundColor: 'white',
               borderRadius: '20px',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow:
+                '0px 5px 20px rgba(0,0,0,0.08)'
             }}
           >
 
             <thead
               style={{
-                backgroundColor: '#1e293b',
+                backgroundColor: '#0f172a',
                 color: 'white'
               }}
             >
@@ -486,7 +596,11 @@ function Dashboard() {
                     style={{
                       padding: '18px',
                       textAlign: 'center',
-                      fontWeight: 'bold'
+                      fontWeight: 'bold',
+                      color:
+                        record.status === 'Suspicious'
+                          ? '#dc2626'
+                          : '#16a34a'
                     }}
                   >
                     {record.status}
